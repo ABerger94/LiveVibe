@@ -14,11 +14,12 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 const io = new Server(httpServer, {
-  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173' }
+  cors: { origin: clientOrigin }
 });
 
-app.use(cors());
+app.use(cors({ origin: clientOrigin }));
 app.use(express.json());
 
 // Routes
