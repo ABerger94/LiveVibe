@@ -4,6 +4,9 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
+// Free messages a user can send per day to start new conversations
+const FREE_MESSAGE_LIMIT = 3;
+
 // Get conversation with a user
 router.get('/:userId', authenticate, async (req, res) => {
   const myId = req.user.userId;
@@ -59,10 +62,10 @@ router.post('/:userId', authenticate, async (req, res) => {
 
     // Reset if it's been 24 hours
     if (new Date(messages_reset_at) < new Date(Date.now() - 24 * 60 * 60 * 1000)) {
-      messages_remaining = 5;
+      messages_remaining = FREE_MESSAGE_LIMIT;
       await pool.query(
-        `UPDATE users SET messages_remaining = 5, messages_reset_at = NOW() WHERE id = $1`,
-        [senderId]
+        `UPDATE users SET messages_remaining = $2, messages_reset_at = NOW() WHERE id = $1`,
+        [senderId, FREE_MESSAGE_LIMIT]
       );
     }
 

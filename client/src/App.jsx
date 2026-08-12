@@ -60,7 +60,7 @@ const Login = ({ onLogin }) => {
           {isRegister ? 'Create Account' : 'Welcome Back'}
         </h2>
         <p style={{ color: '#888', marginBottom: '28px', fontSize: '14px' }}>
-          {isRegister ? 'Join the local conversation.' : 'See who's nearby right now.'}
+          {isRegister ? 'Join the local conversation.' : "See who's nearby right now."}
         </p>
 
         {error && (

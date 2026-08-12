@@ -105,7 +105,7 @@ export const ChatWindow = ({ user, onClose }) => {
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', color: '#666', marginTop: '40px', fontSize: '14px' }}>
             Send a message to start the conversation.<br/>
-            <span style={{ fontSize: '12px' }}>You have 5 free messages per day for new people.</span>
+            <span style={{ fontSize: '12px' }}>You have 3 free messages per day for new people.</span>
           </div>
         )}
         {messages.map((msg, i) => (

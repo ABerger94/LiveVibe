@@ -1,12 +1,12 @@
 # Nearby Social — MVP
 
-A real-time, location-based social app. See who's online within 30 miles, send 5 free messages to initiate conversations.
+A real-time, location-based social app. See who's online within 30 miles, send 3 free messages to initiate conversations.
 
 ## Features
 
 - **Real-time map** showing online users nearby
 - **Live chat** with Socket.io
-- **5-message daily limit** for starting new conversations
+- **3-message daily limit** for starting new conversations
 - **Geospatial queries** via PostGIS
 - **Online/offline presence** with Redis
 - **JWT authentication**
@@ -70,15 +70,15 @@ nearby-social/
     └── schema.sql    # PostgreSQL + PostGIS setup
 ```
 
-## How the 5-Message Limit Works
+## How the 3-Message Limit Works
 
 1. User A sends a message to User B for the first time
 2. Server checks if a conversation exists between them
-3. If not, it checks `messages_remaining` (default: 5)
+3. If not, it checks `messages_remaining` (default: 3)
 4. If > 0, message sends and counter decrements by 1
 5. If User B replies, a conversation record is created
 6. Future messages in that thread are unlimited
-7. Counter resets to 5 every 24 hours
+7. Counter resets to 3 every 24 hours
 
 ## Deployment (Railway)
 
