@@ -28,7 +28,7 @@ export const ProfileViewer = ({ user, onClose, onMessage }) => {
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '380px',
+        maxWidth: '440px',
         maxHeight: '90vh',
         overflowY: 'auto',
         background: '#1a1a2e',
@@ -40,11 +40,11 @@ export const ProfileViewer = ({ user, onClose, onMessage }) => {
         <div style={{ position: 'relative' }}>
           {photos.length > 0 ? (
             <div style={{ borderRadius: '16px 16px 0 0', overflow: 'hidden' }}>
-              <PhotoGallery photos={photos} height="200px" />
+              <PhotoGallery photos={photos} height="clamp(320px, 60vh, 560px)" />
             </div>
           ) : (
             <div style={{
-              height: '140px',
+              height: 'clamp(220px, 40vh, 360px)',
               background: user.avatar_url
                 ? `url(${user.avatar_url}) center/cover`
                 : 'linear-gradient(135deg, #3b82f6 0%, #1a1a3e 100%)',
