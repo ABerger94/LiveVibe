@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from '../api.js';
 import { useSocket } from '../hooks/useSocket.js';
 
-export const ChatWindow = ({ user, onClose }) => {
+export const ChatWindow = ({ user, myUserId, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [error, setError] = useState(null);
@@ -42,7 +42,7 @@ export const ChatWindow = ({ user, onClose }) => {
       await api.post(`/messages/${user.id}`, { content: input });
       sendMessage(user.id, input);
       setMessages(prev => [...prev, {
-        sender_id: 'me',
+        sender_id: myUserId,
         content: input,
         created_at: new Date().toISOString()
       }]);
@@ -121,16 +121,16 @@ export const ChatWindow = ({ user, onClose }) => {
         )}
         {messages.map((msg, i) => (
           <div key={i} style={{
-            alignSelf: msg.sender_id === 'me' ? 'flex-end' : 'flex-start',
-            background: msg.sender_id === 'me' ? '#3b82f6' : '#2a2a4e',
+            alignSelf: msg.sender_id === myUserId ? 'flex-end' : 'flex-start',
+            background: msg.sender_id === myUserId ? '#3b82f6' : '#2a2a4e',
             padding: '10px 14px',
-            borderRadius: msg.sender_id === 'me' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+            borderRadius: msg.sender_id === myUserId ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
             maxWidth: '75%',
             fontSize: '14px',
             lineHeight: '1.4'
           }}>
             {msg.content}
-            <div style={{ fontSize: '10px', color: msg.sender_id === 'me' ? 'rgba(255,255,255,0.6)' : '#666', marginTop: '4px', textAlign: 'right' }}>
+            <div style={{ fontSize: '10px', color: msg.sender_id === myUserId ? 'rgba(255,255,255,0.6)' : '#666', marginTop: '4px', textAlign: 'right' }}>
               {formatTime(msg.created_at)}
             </div>
           </div>

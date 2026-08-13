@@ -300,7 +300,7 @@ const MainApp = () => {
       />
 
       {selectedUser && (
-        <ChatWindow user={selectedUser} onClose={() => setSelectedUser(null)} />
+        <ChatWindow user={selectedUser} myUserId={myProfile?.id} onClose={() => setSelectedUser(null)} />
       )}
 
       {viewingProfile && (
