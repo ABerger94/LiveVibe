@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '../api.js';
 
-export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelectUser }) => {
+export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelectUser, onViewProfile }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -88,9 +88,6 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
           fillColor="#10b981"
           color="#fff"
           fillOpacity={0.9}
-          eventHandlers={{
-            click: () => onSelectUser(user)
-          }}
         >
           <Popup>
             <div style={{ minWidth: '150px' }}>
@@ -110,12 +107,20 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
               {user.interests?.length > 0 && (
                 <p style={{ fontSize: '12px', color: '#3b82f6' }}>{user.interests.join(' · ')}</p>
               )}
-              <button 
-                onClick={() => onSelectUser(user)}
-                style={{ marginTop: '10px', padding: '6px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', width: '100%' }}
-              >
-                Message
-              </button>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                <button
+                  onClick={() => onViewProfile(user)}
+                  style={{ flex: 1, padding: '6px 12px', background: 'transparent', color: '#3b82f6', border: '1px solid #3b82f6', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                >
+                  View Profile
+                </button>
+                <button
+                  onClick={() => onSelectUser(user)}
+                  style={{ flex: 1, padding: '6px 12px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                >
+                  Message
+                </button>
+              </div>
             </div>
           </Popup>
         </CircleMarker>
