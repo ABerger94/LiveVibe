@@ -5,6 +5,7 @@ import { useSocket } from './hooks/useSocket.js';
 import { NearbyMap } from './components/NearbyMap.jsx';
 import { ChatWindow } from './components/ChatWindow.jsx';
 import { ProfileEditor } from './components/ProfileEditor.jsx';
+import { ProfileViewer } from './components/ProfileViewer.jsx';
 import api from './api.js';
 
 const Login = ({ onLogin }) => {
@@ -146,6 +147,7 @@ const MainApp = () => {
   const { location, error: locationError, updateLocation } = useLocation();
   const { connected, authenticate } = useSocket();
   const [selectedUser, setSelectedUser] = useState(null);
+  const [viewingProfile, setViewingProfile] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [myProfile, setMyProfile] = useState(null);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
@@ -235,10 +237,22 @@ const MainApp = () => {
         locationError={locationError}
         onRetryLocation={updateLocation}
         onSelectUser={setSelectedUser}
+        onViewProfile={setViewingProfile}
       />
 
       {selectedUser && (
         <ChatWindow user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
+
+      {viewingProfile && (
+        <ProfileViewer
+          user={viewingProfile}
+          onClose={() => setViewingProfile(null)}
+          onMessage={(user) => {
+            setViewingProfile(null);
+            setSelectedUser(user);
+          }}
+        />
       )}
 
       {showProfileEditor && (
