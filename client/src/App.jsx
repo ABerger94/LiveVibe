@@ -141,7 +141,7 @@ const Login = ({ onLogin }) => {
 };
 
 const MainApp = () => {
-  const { location } = useLocation();
+  const { location, error: locationError, updateLocation } = useLocation();
   const { connected, authenticate } = useSocket();
   const [selectedUser, setSelectedUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -194,7 +194,12 @@ const MainApp = () => {
         </button>
       </div>
 
-      <NearbyMap myLocation={location} onSelectUser={setSelectedUser} />
+      <NearbyMap
+        myLocation={location}
+        locationError={locationError}
+        onRetryLocation={updateLocation}
+        onSelectUser={setSelectedUser}
+      />
 
       {selectedUser && (
         <ChatWindow user={selectedUser} onClose={() => setSelectedUser(null)} />

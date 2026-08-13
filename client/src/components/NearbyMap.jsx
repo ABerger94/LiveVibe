@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '../api.js';
 
-export const NearbyMap = ({ myLocation, onSelectUser }) => {
+export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelectUser }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -23,7 +23,41 @@ export const NearbyMap = ({ myLocation, onSelectUser }) => {
     return () => clearInterval(interval);
   }, [myLocation]);
 
-  if (!myLocation) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#fff' }}>Getting your location...</div>;
+  if (!myLocation) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        color: '#fff',
+        gap: '14px',
+        padding: '20px',
+        textAlign: 'center'
+      }}>
+        {locationError ? (
+          <>
+            <div style={{ color: '#ef4444', fontSize: '14px', maxWidth: '320px' }}>
+              Couldn't get your location: {locationError}
+            </div>
+            <div style={{ color: '#888', fontSize: '13px', maxWidth: '320px' }}>
+              Check that location access is allowed for this site in your
+              browser settings, then try again.
+            </div>
+            <button
+              onClick={onRetryLocation}
+              style={{ padding: '10px 20px', borderRadius: '8px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '500' }}
+            >
+              Try Again
+            </button>
+          </>
+        ) : (
+          'Getting your location...'
+        )}
+      </div>
+    );
+  }
 
   return (
     <MapContainer 
