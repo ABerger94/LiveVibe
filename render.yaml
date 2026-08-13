@@ -13,7 +13,10 @@ services:
         generateValue: true
       - key: DATABASE_URL
         sync: false
-      - key: REDIS_URL
-        sync: false
       - key: CLIENT_URL
         sync: false
+      # REDIS_URL intentionally omitted — it's optional (server/redis.js
+      # falls back to a no-op stub without it). Add it later from the
+      # Render dashboard's Environment tab with an Upstash rediss:// URL
+      # if you want a grace period on brief disconnects instead of an
+      # instant offline flip.

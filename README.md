@@ -99,19 +99,23 @@ Any of these work; the repo ships a `render.yaml` blueprint for the first:
   spin-down. `fly launch` from `server/`, then `fly deploy`.
 - **Railway** — original target platform, if/when available again.
 
-**Database + cache** — independent of whichever compute host you pick:
+**Database** — independent of whichever compute host you pick:
 
 - **Supabase** (Postgres, free tier) — create a project, enable the PostGIS
   extension (SQL editor → `create extension if not exists postgis;`, or the
   Database → Extensions toggle), then run `database/schema.sql` against it.
   Use the connection string as `DATABASE_URL`.
-- **Upstash** (Redis, free tier) — create a database, use its `rediss://`
-  TCP connection string as `REDIS_URL`.
 
-Either way, set on the backend host: `DATABASE_URL`, `REDIS_URL`,
-`JWT_SECRET`, `CLIENT_URL` (the deployed Vercel URL — required for CORS and
-Socket.io to accept the frontend's origin), and `NODE_ENV=production` (gates
-SSL for the Postgres connection in `db.js`).
+**Cache (optional)** — Redis is only used to smooth over brief disconnects
+(a grace period before flipping a user offline); `server/redis.js` falls
+back to a no-op stub if `REDIS_URL` isn't set, so it can be skipped entirely
+to start. Add it later with **Upstash** (free tier, use its `rediss://` URL
+as `REDIS_URL`) if reconnect flicker becomes annoying.
+
+Set on the backend host: `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL` (the
+deployed Vercel URL — required for CORS and Socket.io to accept the
+frontend's origin), and `NODE_ENV=production` (gates SSL for the Postgres
+connection in `db.js`). `REDIS_URL` is optional, per above.
 
 ## Next Steps
 
