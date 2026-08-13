@@ -20,7 +20,7 @@ CREATE TABLE users (
     location_updated_at TIMESTAMP,
     is_online BOOLEAN DEFAULT false,
     last_active_at TIMESTAMP DEFAULT NOW(),
-    messages_remaining INT DEFAULT 5,
+    messages_remaining INT DEFAULT 3,
     messages_reset_at TIMESTAMP DEFAULT NOW(),
     created_at TIMESTAMP DEFAULT NOW()
 );
