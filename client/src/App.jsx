@@ -6,6 +6,7 @@ import { NearbyMap } from './components/NearbyMap.jsx';
 import { ChatWindow } from './components/ChatWindow.jsx';
 import { ProfileEditor } from './components/ProfileEditor.jsx';
 import { ProfileViewer } from './components/ProfileViewer.jsx';
+import { Inbox } from './components/Inbox.jsx';
 import api from './api.js';
 
 const Login = ({ onLogin }) => {
@@ -145,17 +146,50 @@ const Login = ({ onLogin }) => {
 
 const MainApp = () => {
   const { location, error: locationError, updateLocation } = useLocation();
-  const { connected, authenticate } = useSocket();
+  const { connected, authenticate, onMessage } = useSocket();
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [myProfile, setMyProfile] = useState(null);
   const [showProfileEditor, setShowProfileEditor] = useState(false);
+  const [showInbox, setShowInbox] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!token) return;
     api.get('/users/me').then(res => setMyProfile(res.data)).catch(() => {});
   }, [token]);
+
+  const refreshConversations = () => {
+    api.get('/messages').then(res => setConversations(res.data)).catch(() => {});
+  };
+
+  // Keep the unread badge fresh: on load, on a slow poll, whenever a chat
+  // opens/closes (mark-as-read happens inside ChatWindow's own fetch), and
+  // immediately when any message arrives over the socket.
+  useEffect(() => {
+    if (!token) return;
+    refreshConversations();
+    const interval = setInterval(refreshConversations, 20000);
+    return () => clearInterval(interval);
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    refreshConversations();
+  }, [selectedUser, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    const unsubscribe = onMessage(() => {
+      refreshConversations();
+      setInboxRefreshKey(k => k + 1);
+    });
+    return unsubscribe;
+  }, [token]);
+
+  const unreadTotal = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
 
   const handleLogin = (newToken) => {
     setToken(newToken);
@@ -225,6 +259,30 @@ const MainApp = () => {
         </button>
         <span style={{ color: '#666' }}>|</span>
         <button
+          onClick={() => setShowInbox(true)}
+          style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          Messages
+          {unreadTotal > 0 && (
+            <span style={{
+              background: '#ef4444',
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: '700',
+              minWidth: '16px',
+              height: '16px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 4px'
+            }}>
+              {unreadTotal}
+            </span>
+          )}
+        </button>
+        <span style={{ color: '#666' }}>|</span>
+        <button
           onClick={handleLogout}
           style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}
         >
@@ -259,6 +317,17 @@ const MainApp = () => {
         <ProfileEditor
           onClose={() => setShowProfileEditor(false)}
           onUpdated={(updated) => setMyProfile(prev => ({ ...prev, ...updated }))}
+        />
+      )}
+
+      {showInbox && (
+        <Inbox
+          refreshKey={inboxRefreshKey}
+          onClose={() => setShowInbox(false)}
+          onSelectConversation={(user) => {
+            setShowInbox(false);
+            setSelectedUser(user);
+          }}
         />
       )}
     </div>

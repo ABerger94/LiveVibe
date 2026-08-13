@@ -7,6 +7,45 @@ const router = Router();
 // Free messages a user can send per day to start new conversations
 const FREE_MESSAGE_LIMIT = 3;
 
+// List my conversations (inbox) — most recently active first, with each
+// conversation's other participant, last message preview, and unread count
+router.get('/', authenticate, async (req, res) => {
+  const myId = req.user.userId;
+
+  const result = await pool.query(
+    `SELECT
+       c.id AS conversation_id,
+       ou.id AS user_id,
+       ou.username,
+       ou.display_name,
+       ou.avatar_url,
+       c.last_message_at,
+       lm.content AS last_message,
+       lm.sender_id AS last_message_sender_id,
+       COALESCE(unread.count, 0) AS unread_count
+     FROM conversations c
+     JOIN users ou ON ou.id = CASE WHEN c.user1_id = $1 THEN c.user2_id ELSE c.user1_id END
+     LEFT JOIN LATERAL (
+       SELECT content, sender_id
+       FROM messages m
+       WHERE (m.sender_id = c.user1_id AND m.recipient_id = c.user2_id)
+          OR (m.sender_id = c.user2_id AND m.recipient_id = c.user1_id)
+       ORDER BY m.created_at DESC
+       LIMIT 1
+     ) lm ON true
+     LEFT JOIN LATERAL (
+       SELECT COUNT(*)::int AS count
+       FROM messages m
+       WHERE m.recipient_id = $1 AND m.sender_id = ou.id AND m.is_read = false
+     ) unread ON true
+     WHERE c.user1_id = $1 OR c.user2_id = $1
+     ORDER BY c.last_message_at DESC`,
+    [myId]
+  );
+
+  res.json(result.rows);
+});
+
 // Get conversation with a user
 router.get('/:userId', authenticate, async (req, res) => {
   const myId = req.user.userId;
