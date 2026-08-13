@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useLocation } from './hooks/useLocation.js';
 import { useSocket } from './hooks/useSocket.js';
 import { NearbyMap } from './components/NearbyMap.jsx';
 import { ChatWindow } from './components/ChatWindow.jsx';
+import { ProfileEditor } from './components/ProfileEditor.jsx';
+import api from './api.js';
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -141,10 +143,17 @@ const Login = ({ onLogin }) => {
 };
 
 const MainApp = () => {
-  const { location } = useLocation();
+  const { location, error: locationError, updateLocation } = useLocation();
   const { connected, authenticate } = useSocket();
   const [selectedUser, setSelectedUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [myProfile, setMyProfile] = useState(null);
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get('/users/me').then(res => setMyProfile(res.data)).catch(() => {});
+  }, [token]);
 
   const handleLogin = (newToken) => {
     setToken(newToken);
@@ -186,7 +195,34 @@ const MainApp = () => {
           {location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'Locating...'}
         </span>
         <span style={{ color: '#666' }}>|</span>
-        <button 
+        <button
+          onClick={() => setShowProfileEditor(true)}
+          style={{
+            width: '26px',
+            height: '26px',
+            borderRadius: '50%',
+            background: myProfile?.avatar_url ? `url(${myProfile.avatar_url}) center/cover` : '#2a2a4e',
+            border: '1px solid #3b82f6',
+            cursor: 'pointer',
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '11px',
+            color: '#fff'
+          }}
+          title="Edit profile"
+        >
+          {!myProfile?.avatar_url && (myProfile?.display_name?.[0]?.toUpperCase() || '')}
+        </button>
+        <button
+          onClick={() => setShowProfileEditor(true)}
+          style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '13px' }}
+        >
+          Edit Profile
+        </button>
+        <span style={{ color: '#666' }}>|</span>
+        <button
           onClick={handleLogout}
           style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '13px' }}
         >
@@ -194,10 +230,22 @@ const MainApp = () => {
         </button>
       </div>
 
-      <NearbyMap myLocation={location} onSelectUser={setSelectedUser} />
+      <NearbyMap
+        myLocation={location}
+        locationError={locationError}
+        onRetryLocation={updateLocation}
+        onSelectUser={setSelectedUser}
+      />
 
       {selectedUser && (
         <ChatWindow user={selectedUser} onClose={() => setSelectedUser(null)} />
+      )}
+
+      {showProfileEditor && (
+        <ProfileEditor
+          onClose={() => setShowProfileEditor(false)}
+          onUpdated={(updated) => setMyProfile(prev => ({ ...prev, ...updated }))}
+        />
       )}
     </div>
   );

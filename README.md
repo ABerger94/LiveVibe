@@ -7,6 +7,7 @@ A real-time, location-based social app. See who's online within 30 miles, send 3
 - **Real-time map** showing online users nearby
 - **Live chat** with Socket.io
 - **3-message daily limit** for starting new conversations
+- **Editable profiles** — display name, city, bio, interests, avatar photo
 - **Geospatial queries** via PostGIS
 - **Online/offline presence** with Redis
 - **JWT authentication**
@@ -103,7 +104,8 @@ Any of these work; the repo ships a `render.yaml` blueprint for the first:
 
 - **Supabase** (Postgres, free tier) — create a project, enable the PostGIS
   extension (SQL editor → `create extension if not exists postgis;`, or the
-  Database → Extensions toggle), then run `database/schema.sql` against it.
+  Database → Extensions toggle), then run `database/schema.sql` against it
+  (safe to re-run after schema changes — every statement is idempotent).
   Use the connection string as `DATABASE_URL`.
 
 **Cache (optional)** — Redis is only used to smooth over brief disconnects
@@ -112,15 +114,22 @@ back to a no-op stub if `REDIS_URL` isn't set, so it can be skipped entirely
 to start. Add it later with **Upstash** (free tier, use its `rediss://` URL
 as `REDIS_URL`) if reconnect flicker becomes annoying.
 
+**Avatar uploads (optional)** — profile photos are stored in Supabase
+Storage. `database/schema.sql` creates the `avatars` bucket automatically
+when run against a Supabase project. Get `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` from Supabase → Project Settings → API and set
+both on the backend host; `server/supabase.js` disables uploads gracefully
+if they're missing, everything else still works.
+
 Set on the backend host: `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL` (the
 deployed Vercel URL — required for CORS and Socket.io to accept the
 frontend's origin), and `NODE_ENV=production` (gates SSL for the Postgres
-connection in `db.js`). `REDIS_URL` is optional, per above.
+connection in `db.js`). `REDIS_URL` and the two `SUPABASE_*` vars are
+optional, per above.
 
 ## Next Steps
 
 - [ ] Push notifications (OneSignal or Firebase)
-- [ ] Photo uploads (Cloudinary or S3)
 - [ ] In-app purchases (Stripe)
 - [ ] Report/block users
 - [ ] React Native app

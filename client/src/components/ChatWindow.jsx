@@ -82,9 +82,18 @@ export const ChatWindow = ({ user, onClose }) => {
         background: '#151528',
         borderRadius: '12px 12px 0 0'
       }}>
-        <div>
-          <strong>@{user.username}</strong>
-          <span style={{ marginLeft: '8px', fontSize: '12px', color: '#10b981' }}>● online</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {user.avatar_url && (
+            <img
+              src={user.avatar_url}
+              alt=""
+              style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+          )}
+          <div>
+            <strong>@{user.username}</strong>
+            <div style={{ fontSize: '12px', color: '#10b981' }}>● online</div>
+          </div>
         </div>
         <button 
           onClick={onClose}
