@@ -4,9 +4,12 @@ A real-time, location-based social app. See who's online within 30 miles, send 3
 
 ## Features
 
-- **Real-time map** showing online users nearby
+- **Real-time map** showing online users nearby — fuzzed positions only
+  (~0.4mi random offset, never someone's exact coordinates; see
+  `server/geoFuzz.js`)
 - **Live chat** with Socket.io
-- **3-message daily limit** for starting new conversations
+- **Message limit** for starting new conversations (currently disabled for
+  testing — `ENFORCE_MESSAGE_LIMIT` in `server/routes/messages.js`)
 - **Editable profiles** — display name, city, bio, interest tags, avatar
   photo, and a swipeable multi-photo gallery (up to 6 photos)
 - **View other users' profiles** — a "View Profile" action on the map,

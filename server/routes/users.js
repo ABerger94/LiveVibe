@@ -5,6 +5,7 @@ import { pool } from '../db.js';
 import { redis } from '../redis.js';
 import { authenticate } from '../middleware/auth.js';
 import { supabase, AVATAR_BUCKET, PHOTO_BUCKET } from '../supabase.js';
+import { fuzzLocation } from '../geoFuzz.js';
 
 const router = Router();
 const MAX_PHOTOS = 6;
@@ -30,6 +31,10 @@ router.get('/nearby', authenticate, async (req, res) => {
   // Convert miles to meters for PostGIS
   const radiusMeters = radius * 1609.34;
 
+  // lat/lng here are each user's real coordinates, used only for the
+  // server-side distance/radius math below — they must never reach the
+  // client as-is. The response replaces them with a fuzzed position
+  // (see geoFuzz.js) before anything goes out over res.json().
   const result = await pool.query(
     `SELECT id, username, display_name, bio, interests, avatar_url, lat, lng,
             ST_Distance(
@@ -50,7 +55,18 @@ router.get('/nearby', authenticate, async (req, res) => {
     [lng, lat, userId, radiusMeters]
   );
 
-  res.json(result.rows);
+  const fuzzedUsers = result.rows.map(row => {
+    const { lat: fuzzedLat, lng: fuzzedLng } = fuzzLocation(row.id, row.lat, row.lng);
+    return {
+      ...row,
+      lat: fuzzedLat,
+      lng: fuzzedLng,
+      // Rounded so it doesn't hand back the precision the fuzzed pin just took away
+      distance_miles: Math.round(row.distance_miles * 2) / 2
+    };
+  });
+
+  res.json(fuzzedUsers);
 });
 
 // Update location & online status
