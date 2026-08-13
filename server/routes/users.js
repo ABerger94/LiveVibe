@@ -56,15 +56,12 @@ router.get('/nearby', authenticate, asyncHandler(async (req, res) => {
     [lng, lat, userId, radiusMeters]
   );
 
-  const fuzzedUsers = result.rows.map(row => {
-    const { lat: fuzzedLat, lng: fuzzedLng } = fuzzLocation(row.id, row.lat, row.lng);
-    return {
-      ...row,
-      lat: fuzzedLat,
-      lng: fuzzedLng,
-      // Rounded so it doesn't hand back the precision the fuzzed pin just took away
-      distance_miles: Math.round(row.distance_miles * 2) / 2
-    };
+  // distance_miles is only used above for ORDER BY — it's real (unfuzzed)
+  // positional information about another user and never goes to the
+  // client, same as their raw lat/lng.
+  const fuzzedUsers = result.rows.map(({ distance_miles, lat, lng, ...publicFields }) => {
+    const { lat: fuzzedLat, lng: fuzzedLng } = fuzzLocation(publicFields.id, lat, lng);
+    return { ...publicFields, lat: fuzzedLat, lng: fuzzedLng };
   });
 
   res.json(fuzzedUsers);

@@ -119,7 +119,6 @@ export const NearbyMap = ({ myLocation, myAvatarUrl, locationError, onRetryLocat
                 <strong style={{ fontSize: '16px' }}>@{user.username}</strong>
               </div>
               <p style={{ margin: '4px 0', color: '#666' }}>{user.display_name}</p>
-              <p style={{ margin: '4px 0', fontSize: '13px', color: '#888' }}>{user.distance_miles?.toFixed(1)} miles away</p>
               {user.bio && <p style={{ margin: '8px 0', fontSize: '13px' }}>{user.bio}</p>}
               {user.interests?.length > 0 && (
                 <p style={{ fontSize: '12px', color: '#3b82f6' }}>{user.interests.join(' · ')}</p>

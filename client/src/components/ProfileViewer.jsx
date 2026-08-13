@@ -91,12 +91,11 @@ export const ProfileViewer = ({ user, onClose, onMessage }) => {
           <h2 style={{ fontSize: '20px', fontWeight: '700' }}>{user.display_name || user.username}</h2>
           <p style={{ color: '#888', fontSize: '14px', marginTop: '2px' }}>@{user.username}</p>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '8px', fontSize: '13px', color: '#888' }}>
-            {typeof user.distance_miles === 'number' && (
-              <span>📍 {user.distance_miles.toFixed(1)} mi away</span>
-            )}
-            {user.city && <span>{user.city}</span>}
-          </div>
+          {user.city && (
+            <div style={{ marginTop: '8px', fontSize: '13px', color: '#888' }}>
+              <span>{user.city}</span>
+            </div>
+          )}
 
           {user.bio && (
             <p style={{ marginTop: '16px', fontSize: '14px', lineHeight: '1.5', color: '#ddd' }}>{user.bio}</p>

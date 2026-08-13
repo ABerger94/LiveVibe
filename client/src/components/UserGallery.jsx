@@ -115,18 +115,6 @@ export const UserGallery = ({ myLocation, locationError, onRetryLocation, onSele
                   {(user.display_name?.[0] || user.username?.[0] || '?').toUpperCase()}
                 </div>
               )}
-              <div style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                background: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                fontSize: '11px',
-                padding: '3px 8px',
-                borderRadius: '999px'
-              }}>
-                {user.distance_miles?.toFixed(1)} mi
-              </div>
             </div>
 
             <div style={{ padding: '10px 12px' }}>
