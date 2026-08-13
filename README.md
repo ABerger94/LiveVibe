@@ -80,13 +80,38 @@ nearby-social/
 6. Future messages in that thread are unlimited
 7. Counter resets to 3 every 24 hours
 
-## Deployment (Railway)
+## Deployment
 
-1. Push this repo to GitHub
-2. Create a new Railway project, connect the repo
-3. Add PostgreSQL and Redis services
-4. Set environment variables in Railway dashboard
-5. Deploy — Railway handles the rest
+**Frontend** — deploy `client/` to Vercel (Root Directory = `client`, framework
+auto-detected as Vite). Set `VITE_API_URL` to the backend's origin (no `/api`
+suffix, no trailing slash).
+
+**Backend** — `server/` is a persistent Express + Socket.io process, so it
+needs a host that keeps a Node process running, not a serverless platform.
+Any of these work; the repo ships a `render.yaml` blueprint for the first:
+
+- **Render** (free tier) — New → Blueprint → point at this repo, or manually
+  create a Web Service with Root Directory `server`, build `npm install`,
+  start `npm start`. The free plan spins the service down after ~15 min
+  idle, which drops open sockets and adds a cold-start delay on the next
+  request — fine for a demo, not for "who's online" accuracy under real use.
+- **Fly.io** — a couple dollars/month for an always-on machine, no
+  spin-down. `fly launch` from `server/`, then `fly deploy`.
+- **Railway** — original target platform, if/when available again.
+
+**Database + cache** — independent of whichever compute host you pick:
+
+- **Supabase** (Postgres, free tier) — create a project, enable the PostGIS
+  extension (SQL editor → `create extension if not exists postgis;`, or the
+  Database → Extensions toggle), then run `database/schema.sql` against it.
+  Use the connection string as `DATABASE_URL`.
+- **Upstash** (Redis, free tier) — create a database, use its `rediss://`
+  TCP connection string as `REDIS_URL`.
+
+Either way, set on the backend host: `DATABASE_URL`, `REDIS_URL`,
+`JWT_SECRET`, `CLIENT_URL` (the deployed Vercel URL — required for CORS and
+Socket.io to accept the frontend's origin), and `NODE_ENV=production` (gates
+SSL for the Postgres connection in `db.js`).
 
 ## Next Steps
 
