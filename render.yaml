@@ -20,3 +20,8 @@ services:
       # Render dashboard's Environment tab with an Upstash rediss:// URL
       # if you want a grace period on brief disconnects instead of an
       # instant offline flip.
+      #
+      # SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY also intentionally
+      # omitted — optional, enables avatar uploads (server/supabase.js
+      # falls back to disabling the feature without them). Add both from
+      # the dashboard's Environment tab: Supabase Project Settings -> API.

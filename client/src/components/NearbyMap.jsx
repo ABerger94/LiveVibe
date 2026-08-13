@@ -94,7 +94,16 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
         >
           <Popup>
             <div style={{ minWidth: '150px' }}>
-              <strong style={{ fontSize: '16px' }}>@{user.username}</strong>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {user.avatar_url && (
+                  <img
+                    src={user.avatar_url}
+                    alt=""
+                    style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                )}
+                <strong style={{ fontSize: '16px' }}>@{user.username}</strong>
+              </div>
               <p style={{ margin: '4px 0', color: '#666' }}>{user.display_name}</p>
               <p style={{ margin: '4px 0', fontSize: '13px', color: '#888' }}>{user.distance_miles?.toFixed(1)} miles away</p>
               {user.bio && <p style={{ margin: '8px 0', fontSize: '13px' }}>{user.bio}</p>}

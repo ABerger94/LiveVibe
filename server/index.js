@@ -58,6 +58,13 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // Socket.io
 setupSocketHandlers(io);
 
+// Centralized error handler — keeps errors (e.g. multer file-size/type
+// rejections) as JSON instead of Express's default HTML error page.
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 400).json({ error: err.message || 'Something went wrong' });
+});
+
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
