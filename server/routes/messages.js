@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../db.js';
 import { authenticate } from '../middleware/auth.js';
+import { asyncHandler } from '../asyncHandler.js';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const FREE_MESSAGE_LIMIT = 3;
 
 // List my conversations (inbox) — most recently active first, with each
 // conversation's other participant, last message preview, and unread count
-router.get('/', authenticate, async (req, res) => {
+router.get('/', authenticate, asyncHandler(async (req, res) => {
   const myId = req.user.userId;
 
   const result = await pool.query(
@@ -48,10 +49,10 @@ router.get('/', authenticate, async (req, res) => {
   );
 
   res.json(result.rows);
-});
+}));
 
 // Get conversation with a user
-router.get('/:userId', authenticate, async (req, res) => {
+router.get('/:userId', authenticate, asyncHandler(async (req, res) => {
   const myId = req.user.userId;
   const theirId = req.params.userId;
 
@@ -77,10 +78,10 @@ router.get('/:userId', authenticate, async (req, res) => {
   );
 
   res.json(result.rows.reverse());
-});
+}));
 
 // Send message
-router.post('/:userId', authenticate, async (req, res) => {
+router.post('/:userId', authenticate, asyncHandler(async (req, res) => {
   const senderId = req.user.userId;
   const recipientId = req.params.userId;
   const { content } = req.body;
@@ -140,6 +141,6 @@ router.post('/:userId', authenticate, async (req, res) => {
   );
 
   res.json(msgResult.rows[0]);
-});
+}));
 
 export default router;

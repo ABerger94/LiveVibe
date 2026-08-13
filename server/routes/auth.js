@@ -2,10 +2,11 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { pool } from '../db.js';
 import { generateToken } from '../middleware/auth.js';
+import { asyncHandler } from '../asyncHandler.js';
 
 const router = Router();
 
-router.post('/register', async (req, res) => {
+router.post('/register', asyncHandler(async (req, res) => {
   const { username, email, password, displayName, bio, interests, city } = req.body;
 
   try {
@@ -21,9 +22,9 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
-});
+}));
 
-router.post('/login', async (req, res) => {
+router.post('/login', asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -34,10 +35,10 @@ router.post('/login', async (req, res) => {
   }
 
   const token = generateToken(user.id);
-  res.json({ 
+  res.json({
     user: { id: user.id, username: user.username, displayName: user.display_name },
-    token 
+    token
   });
-});
+}));
 
 export default router;

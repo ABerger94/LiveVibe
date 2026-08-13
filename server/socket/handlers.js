@@ -32,7 +32,7 @@ export const setupSocketHandlers = (io) => {
     });
 
     // Handle direct messages in real-time
-    socket.on('send_message', async (data) => {
+    socket.on('send_message', (data) => {
       if (!socket.userId) return;
 
       const { recipientId, content } = data;
@@ -55,10 +55,17 @@ export const setupSocketHandlers = (io) => {
     });
 
     // Disconnect handler
-    socket.on('disconnect', async () => {
-      if (userId) {
-        // Don't immediately mark offline — they might reconnect
-        setTimeout(async () => {
+    socket.on('disconnect', () => {
+      if (!userId) return;
+
+      // Don't immediately mark offline — they might reconnect. Same reason
+      // as the 'authenticate' handler above: a rejected promise in here
+      // (e.g. a DB hiccup) is not attached to any request/response, so
+      // Express's error handling never sees it — left unguarded it becomes
+      // an unhandled rejection, which crashes the whole Node process on
+      // modern Node, taking down every route until Render restarts it.
+      setTimeout(async () => {
+        try {
           const stillOnline = await redis.get(`user:${userId}:online`);
           if (!stillOnline) {
             await pool.query(
@@ -67,8 +74,10 @@ export const setupSocketHandlers = (io) => {
             );
             io.emit('user_offline', { userId });
           }
-        }, 10000); // 10 second grace period
-      }
+        } catch (err) {
+          console.error('Failed to process disconnect for', userId, err);
+        }
+      }, 10000); // 10 second grace period
     });
   });
 };
