@@ -92,7 +92,9 @@ export const ChatWindow = ({ user, onClose }) => {
           )}
           <div>
             <strong>@{user.username}</strong>
-            <div style={{ fontSize: '12px', color: '#10b981' }}>● online</div>
+            {user.display_name && (
+              <div style={{ fontSize: '12px', color: '#888' }}>{user.display_name}</div>
+            )}
           </div>
         </div>
         <button 
