@@ -4,6 +4,7 @@ import { useLocation } from './hooks/useLocation.js';
 import { useSocket } from './hooks/useSocket.js';
 import { SocketProvider } from './context/SocketContext.jsx';
 import { NearbyMap } from './components/NearbyMap.jsx';
+import { UserGallery } from './components/UserGallery.jsx';
 import { ChatWindow } from './components/ChatWindow.jsx';
 import { ProfileEditor } from './components/ProfileEditor.jsx';
 import { ProfileViewer } from './components/ProfileViewer.jsx';
@@ -156,6 +157,7 @@ const MainApp = () => {
   const [showInbox, setShowInbox] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
+  const [viewMode, setViewMode] = useState('map'); // 'map' | 'gallery'
 
   useEffect(() => {
     if (!token) return;
@@ -232,6 +234,21 @@ const MainApp = () => {
           {location ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}` : 'Locating...'}
         </span>
         <span style={{ color: '#666' }}>|</span>
+        <div style={{ display: 'flex', background: '#0f0f23', borderRadius: '8px', padding: '2px', gap: '2px' }}>
+          <button
+            onClick={() => setViewMode('map')}
+            style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500', background: viewMode === 'map' ? '#3b82f6' : 'transparent', color: '#fff' }}
+          >
+            Map
+          </button>
+          <button
+            onClick={() => setViewMode('gallery')}
+            style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500', background: viewMode === 'gallery' ? '#3b82f6' : 'transparent', color: '#fff' }}
+          >
+            Gallery
+          </button>
+        </div>
+        <span style={{ color: '#666' }}>|</span>
         <button
           onClick={() => setShowProfileEditor(true)}
           style={{
@@ -291,13 +308,24 @@ const MainApp = () => {
         </button>
       </div>
 
-      <NearbyMap
-        myLocation={location}
-        locationError={locationError}
-        onRetryLocation={updateLocation}
-        onSelectUser={setSelectedUser}
-        onViewProfile={setViewingProfile}
-      />
+      {viewMode === 'map' ? (
+        <NearbyMap
+          myLocation={location}
+          myAvatarUrl={myProfile?.avatar_url}
+          locationError={locationError}
+          onRetryLocation={updateLocation}
+          onSelectUser={setSelectedUser}
+          onViewProfile={setViewingProfile}
+        />
+      ) : (
+        <UserGallery
+          myLocation={location}
+          locationError={locationError}
+          onRetryLocation={updateLocation}
+          onSelectUser={setSelectedUser}
+          onViewProfile={setViewingProfile}
+        />
+      )}
 
       {selectedUser && (
         <ChatWindow user={selectedUser} myUserId={myProfile?.id} onClose={() => setSelectedUser(null)} />
