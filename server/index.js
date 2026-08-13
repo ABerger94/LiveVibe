@@ -12,6 +12,19 @@ import { setupSocketHandlers } from './socket/handlers.js';
 
 dotenv.config();
 
+// Last-resort safety net. Every async Express handler is wrapped in
+// asyncHandler and every async socket listener has its own try/catch, so
+// this shouldn't normally fire — but on modern Node, an unhandled
+// rejection anywhere crashes the whole process by default, and that's a
+// much worse failure mode (every route 502s until Render restarts the
+// container) than logging one bad request and carrying on.
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
 const app = express();
 const httpServer = createServer(app);
 

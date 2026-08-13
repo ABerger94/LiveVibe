@@ -6,6 +6,7 @@ import { redis } from '../redis.js';
 import { authenticate } from '../middleware/auth.js';
 import { supabase, AVATAR_BUCKET, PHOTO_BUCKET } from '../supabase.js';
 import { fuzzLocation } from '../geoFuzz.js';
+import { asyncHandler } from '../asyncHandler.js';
 
 const router = Router();
 const MAX_PHOTOS = 6;
@@ -22,7 +23,7 @@ const upload = multer({
 });
 
 // Get nearby online users
-router.get('/nearby', authenticate, async (req, res) => {
+router.get('/nearby', authenticate, asyncHandler(async (req, res) => {
   const { lat, lng, radius = 30 } = req.query; // radius in miles
   const userId = req.user.userId;
 
@@ -67,10 +68,10 @@ router.get('/nearby', authenticate, async (req, res) => {
   });
 
   res.json(fuzzedUsers);
-});
+}));
 
 // Update location & online status
-router.post('/location', authenticate, async (req, res) => {
+router.post('/location', authenticate, asyncHandler(async (req, res) => {
   const { lat, lng } = req.body;
   const userId = req.user.userId;
 
@@ -85,10 +86,10 @@ router.post('/location', authenticate, async (req, res) => {
   await redis.set(`user:${userId}:online`, '1', { EX: 300 }); // 5 min TTL
 
   res.json({ success: true });
-});
+}));
 
 // Get my profile
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', authenticate, asyncHandler(async (req, res) => {
   const result = await pool.query(
     `SELECT id, username, display_name, bio, interests, avatar_url,
             messages_remaining, messages_reset_at, city
@@ -96,10 +97,10 @@ router.get('/me', authenticate, async (req, res) => {
     [req.user.userId]
   );
   res.json(result.rows[0]);
-});
+}));
 
 // Update my profile
-router.patch('/me', authenticate, async (req, res) => {
+router.patch('/me', authenticate, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
   const { displayName, bio, city, interests } = req.body;
 
@@ -119,10 +120,10 @@ router.patch('/me', authenticate, async (req, res) => {
   );
 
   res.json(result.rows[0]);
-});
+}));
 
 // Upload/replace my avatar
-router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res) => {
+router.post('/me/avatar', authenticate, upload.single('avatar'), asyncHandler(async (req, res) => {
   if (!supabase) {
     return res.status(503).json({ error: 'Avatar uploads are not configured on this server' });
   }
@@ -151,20 +152,20 @@ router.post('/me/avatar', authenticate, upload.single('avatar'), async (req, res
   await pool.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [avatarUrl, userId]);
 
   res.json({ avatarUrl });
-});
+}));
 
 // Get a user's photo gallery (works for your own id or anyone else's —
 // gallery photos are visible to any authenticated user, same as bio/avatar)
-router.get('/:userId/photos', authenticate, async (req, res) => {
+router.get('/:userId/photos', authenticate, asyncHandler(async (req, res) => {
   const result = await pool.query(
     'SELECT id, url, position FROM user_photos WHERE user_id = $1 ORDER BY position ASC, created_at ASC',
     [req.params.userId]
   );
   res.json(result.rows);
-});
+}));
 
 // Add a photo to my gallery
-router.post('/me/photos', authenticate, upload.single('photo'), async (req, res) => {
+router.post('/me/photos', authenticate, upload.single('photo'), asyncHandler(async (req, res) => {
   if (!supabase) {
     return res.status(503).json({ error: 'Photo uploads are not configured on this server' });
   }
@@ -204,10 +205,10 @@ router.post('/me/photos', authenticate, upload.single('photo'), async (req, res)
   );
 
   res.json(result.rows[0]);
-});
+}));
 
 // Remove a photo from my gallery
-router.delete('/me/photos/:photoId', authenticate, async (req, res) => {
+router.delete('/me/photos/:photoId', authenticate, asyncHandler(async (req, res) => {
   const userId = req.user.userId;
 
   const existing = await pool.query(
@@ -227,6 +228,6 @@ router.delete('/me/photos/:photoId', authenticate, async (req, res) => {
 
   await pool.query('DELETE FROM user_photos WHERE id = $1', [req.params.photoId]);
   res.json({ success: true });
-});
+}));
 
 export default router;
