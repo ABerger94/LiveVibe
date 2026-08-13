@@ -44,6 +44,19 @@ CREATE TABLE IF NOT EXISTS conversations (
     UNIQUE(user1_id, user2_id)
 );
 
+-- Profile photo gallery (separate from users.avatar_url, which is the
+-- small profile picture shown in map markers/chat headers). storage_path
+-- is the Supabase Storage object key, kept alongside the public url so a
+-- delete doesn't need to reverse-parse it back out of the URL.
+CREATE TABLE IF NOT EXISTS user_photos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    url VARCHAR(500) NOT NULL,
+    storage_path VARCHAR(500) NOT NULL,
+    position INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (
     ST_SetSRID(ST_MakePoint(lng, lat), 4326)
@@ -51,15 +64,20 @@ CREATE INDEX IF NOT EXISTS idx_users_location ON users USING GIST (
 CREATE INDEX IF NOT EXISTS idx_users_online ON users(is_online, last_active_at);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(sender_id, recipient_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_conversations_users ON conversations(user1_id, user2_id);
+CREATE INDEX IF NOT EXISTS idx_user_photos_user ON user_photos(user_id, position);
 
--- Storage bucket for profile avatars. Supabase-specific (storage.buckets
--- only exists on Supabase projects) — remove this block if running against
--- plain PostgreSQL, since avatar uploads require Supabase Storage anyway.
--- Public so avatar images can be viewed via their public URL directly; all
+-- Storage buckets. Supabase-specific (storage.buckets only exists on
+-- Supabase projects) — remove this block if running against plain
+-- PostgreSQL, since photo uploads require Supabase Storage anyway. Both
+-- public so images can be viewed via their public URL directly; all
 -- writes go through the backend using the service-role key, which bypasses
 -- RLS, so no additional storage policies are required.
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('photos', 'photos', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Optional: Add a function to clean up old offline users
