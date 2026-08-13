@@ -4,7 +4,11 @@ import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
-// Free messages a user can send per day to start new conversations
+// Free messages a user can send per day to start new conversations.
+// TEMPORARILY DISABLED while debugging message delivery — flip back to
+// true (and it's enforced again, no other changes needed) once that's
+// confirmed working.
+const ENFORCE_MESSAGE_LIMIT = false;
 const FREE_MESSAGE_LIMIT = 3;
 
 // List my conversations (inbox) — most recently active first, with each
@@ -90,7 +94,7 @@ router.post('/:userId', authenticate, async (req, res) => {
     [senderId, recipientId]
   );
 
-  if (existing.rows.length === 0) {
+  if (ENFORCE_MESSAGE_LIMIT && existing.rows.length === 0) {
     // First conversation — check message quota
     const sender = await pool.query(
       `SELECT messages_remaining, messages_reset_at FROM users WHERE id = $1`,
