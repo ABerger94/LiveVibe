@@ -1,9 +1,28 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import api from '../api.js';
 
-export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelectUser, onViewProfile }) => {
+// A circular avatar (or an initial, if no photo) as a Leaflet marker icon.
+// className: '' strips Leaflet's default .leaflet-div-icon box styling
+// (a white square background) so only our own markup renders.
+const createAvatarIcon = (avatarUrl, initial, borderColor) => {
+  const size = 40;
+  const inner = avatarUrl
+    ? `<div style="width:${size}px;height:${size}px;border-radius:50%;background:url('${avatarUrl}') center/cover;border:3px solid ${borderColor};box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>`
+    : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:#2a2a4e;border:3px solid ${borderColor};display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.4);">${initial}</div>`;
+
+  return L.divIcon({
+    html: inner,
+    className: '',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2]
+  });
+};
+
+export const NearbyMap = ({ myLocation, myAvatarUrl, locationError, onRetryLocation, onSelectUser, onViewProfile }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -60,9 +79,9 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
   }
 
   return (
-    <MapContainer 
-      center={[myLocation.lat, myLocation.lng]} 
-      zoom={13} 
+    <MapContainer
+      center={[myLocation.lat, myLocation.lng]}
+      zoom={13}
       style={{ height: '100vh', width: '100%' }}
     >
       <TileLayer
@@ -70,24 +89,22 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <CircleMarker 
-        center={[myLocation.lat, myLocation.lng]} 
-        radius={10} 
-        fillColor="#3b82f6" 
-        color="#fff"
-        fillOpacity={1}
+      <Marker
+        position={[myLocation.lat, myLocation.lng]}
+        icon={createAvatarIcon(myAvatarUrl, 'Y', '#3b82f6')}
       >
         <Popup>You</Popup>
-      </CircleMarker>
+      </Marker>
 
       {users.map(user => (
-        <CircleMarker
+        <Marker
           key={user.id}
-          center={[user.lat, user.lng]}
-          radius={8}
-          fillColor="#10b981"
-          color="#fff"
-          fillOpacity={0.9}
+          position={[user.lat, user.lng]}
+          icon={createAvatarIcon(
+            user.avatar_url,
+            (user.display_name?.[0] || user.username?.[0] || '?').toUpperCase(),
+            '#10b981'
+          )}
         >
           <Popup>
             <div style={{ minWidth: '150px' }}>
@@ -123,7 +140,7 @@ export const NearbyMap = ({ myLocation, locationError, onRetryLocation, onSelect
               </div>
             </div>
           </Popup>
-        </CircleMarker>
+        </Marker>
       ))}
     </MapContainer>
   );
