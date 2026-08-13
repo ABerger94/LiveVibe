@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useLocation } from './hooks/useLocation.js';
 import { useSocket } from './hooks/useSocket.js';
+import { SocketProvider } from './context/SocketContext.jsx';
 import { NearbyMap } from './components/NearbyMap.jsx';
 import { ChatWindow } from './components/ChatWindow.jsx';
 import { ProfileEditor } from './components/ProfileEditor.jsx';
@@ -146,7 +147,7 @@ const Login = ({ onLogin }) => {
 
 const MainApp = () => {
   const { location, error: locationError, updateLocation } = useLocation();
-  const { connected, authenticate, onMessage } = useSocket();
+  const { connected, authError, authenticate, onMessage } = useSocket();
   const [selectedUser, setSelectedUser] = useState(null);
   const [viewingProfile, setViewingProfile] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -223,8 +224,8 @@ const MainApp = () => {
         gap: '12px',
         fontSize: '13px'
       }}>
-        <span style={{ color: connected ? '#10b981' : '#ef4444' }}>
-          {connected ? '● Live' : '● Offline'}
+        <span style={{ color: authError ? '#ef4444' : connected ? '#10b981' : '#ef4444' }} title={authError || ''}>
+          {authError ? '● Not authenticated' : connected ? '● Live' : '● Offline'}
         </span>
         <span style={{ color: '#666' }}>|</span>
         <span style={{ color: '#888' }}>
@@ -335,11 +336,13 @@ const MainApp = () => {
 };
 
 const App = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="*" element={<MainApp />} />
-    </Routes>
-  </BrowserRouter>
+  <SocketProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  </SocketProvider>
 );
 
 export default App;
