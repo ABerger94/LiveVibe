@@ -1,4 +1,18 @@
+import { useState, useEffect } from 'react';
+import api from '../api.js';
+import { PhotoGallery } from './PhotoGallery.jsx';
+
 export const ProfileViewer = ({ user, onClose, onMessage }) => {
+  const [photos, setPhotos] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+    setPhotos([]);
+    api.get(`/users/${user.id}/photos`)
+      .then(res => setPhotos(res.data))
+      .catch(() => {});
+  }, [user?.id]);
+
   if (!user) return null;
 
   return (
@@ -24,13 +38,19 @@ export const ProfileViewer = ({ user, onClose, onMessage }) => {
         border: '1px solid #2a2a4e'
       }}>
         <div style={{ position: 'relative' }}>
-          <div style={{
-            height: '140px',
-            background: user.avatar_url
-              ? `url(${user.avatar_url}) center/cover`
-              : 'linear-gradient(135deg, #3b82f6 0%, #1a1a3e 100%)',
-            borderRadius: '16px 16px 0 0'
-          }} />
+          {photos.length > 0 ? (
+            <div style={{ borderRadius: '16px 16px 0 0', overflow: 'hidden' }}>
+              <PhotoGallery photos={photos} height="200px" />
+            </div>
+          ) : (
+            <div style={{
+              height: '140px',
+              background: user.avatar_url
+                ? `url(${user.avatar_url}) center/cover`
+                : 'linear-gradient(135deg, #3b82f6 0%, #1a1a3e 100%)',
+              borderRadius: '16px 16px 0 0'
+            }} />
+          )}
           <button
             onClick={onClose}
             style={{

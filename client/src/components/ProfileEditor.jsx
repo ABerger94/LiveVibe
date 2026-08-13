@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../api.js';
 
+const MAX_PHOTOS = 6;
+
 const inputStyle = {
   padding: '12px 14px',
   borderRadius: '10px',
@@ -12,14 +14,19 @@ const inputStyle = {
 };
 
 export const ProfileEditor = ({ onClose, onUpdated }) => {
-  const [form, setForm] = useState({ displayName: '', city: '', bio: '', interests: '' });
+  const [form, setForm] = useState({ displayName: '', city: '', bio: '' });
+  const [interests, setInterests] = useState([]);
+  const [interestInput, setInterestInput] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const photoInputRef = useRef(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -29,10 +36,13 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
         setForm({
           displayName: me.display_name || '',
           city: me.city || '',
-          bio: me.bio || '',
-          interests: (me.interests || []).join(', ')
+          bio: me.bio || ''
         });
+        setInterests(me.interests || []);
         setAvatarUrl(me.avatar_url || null);
+
+        const photosRes = await api.get(`/users/${me.id}/photos`);
+        setPhotos(photosRes.data);
       } catch (err) {
         setError('Failed to load profile');
       } finally {
@@ -64,6 +74,77 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
     setAvatarFile(file);
   };
 
+  const addInterest = () => {
+    const tag = interestInput.trim();
+    if (!tag) return;
+    if (interests.some(i => i.toLowerCase() === tag.toLowerCase())) {
+      setInterestInput('');
+      return;
+    }
+    if (interests.length >= 15) {
+      setError('Up to 15 interests');
+      return;
+    }
+    setInterests([...interests, tag]);
+    setInterestInput('');
+  };
+
+  const removeInterest = (tag) => {
+    setInterests(interests.filter(i => i !== tag));
+  };
+
+  const handleInterestKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      addInterest();
+    } else if (e.key === 'Backspace' && !interestInput && interests.length > 0) {
+      removeInterest(interests[interests.length - 1]);
+    }
+  };
+
+  const handlePhotoPick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow picking the same file again later
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be under 5MB');
+      return;
+    }
+    if (photos.length >= MAX_PHOTOS) {
+      setError(`You can upload up to ${MAX_PHOTOS} photos`);
+      return;
+    }
+
+    setError(null);
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('photo', file);
+      const res = await api.post('/users/me/photos', formData);
+      setPhotos(prev => [...prev, res.data]);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handlePhotoDelete = async (photoId) => {
+    const prevPhotos = photos;
+    setPhotos(photos.filter(p => p.id !== photoId));
+    try {
+      await api.delete(`/users/me/photos/${photoId}`);
+    } catch (err) {
+      setPhotos(prevPhotos);
+      setError('Failed to delete photo');
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setError(null);
@@ -77,11 +158,6 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
         const res = await api.post('/users/me/avatar', formData);
         newAvatarUrl = res.data.avatarUrl;
       }
-
-      const interests = form.interests
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean);
 
       const res = await api.patch('/users/me', {
         displayName: form.displayName,
@@ -114,7 +190,7 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '420px',
+        maxWidth: '440px',
         maxHeight: '90vh',
         overflowY: 'auto',
         padding: '28px',
@@ -146,7 +222,7 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
               <div
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => avatarInputRef.current?.click()}
                 style={{
                   width: '72px',
                   height: '72px',
@@ -165,13 +241,13 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
               </div>
               <div>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => avatarInputRef.current?.click()}
                   style={{ padding: '8px 14px', borderRadius: '8px', background: '#2a2a4e', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '13px' }}
                 >
-                  Change photo
+                  Change profile photo
                 </button>
                 <input
-                  ref={fileInputRef}
+                  ref={avatarInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarPick}
@@ -201,12 +277,115 @@ export const ProfileEditor = ({ onClose, onUpdated }) => {
                 onChange={e => setForm({ ...form, bio: e.target.value })}
                 style={{ ...inputStyle, resize: 'none' }}
               />
-              <input
-                placeholder="Interests, comma separated (e.g. music, hiking, coding)"
-                value={form.interests}
-                onChange={e => setForm({ ...form, interests: e.target.value })}
-                style={inputStyle}
-              />
+
+              <div>
+                <div style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '6px',
+                  padding: interests.length ? '10px 10px 4px' : '0',
+                }}>
+                  {interests.map(tag => (
+                    <span key={tag} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'rgba(59,130,246,0.15)',
+                      color: '#3b82f6',
+                      padding: '4px 6px 4px 10px',
+                      borderRadius: '999px',
+                      fontSize: '12px',
+                      marginBottom: '6px'
+                    }}>
+                      {tag}
+                      <button
+                        onClick={() => removeInterest(tag)}
+                        style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '13px', padding: 0, lineHeight: 1 }}
+                        aria-label={`Remove ${tag}`}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  placeholder="Add an interest and press Enter (e.g. music, hiking)"
+                  value={interestInput}
+                  onChange={e => setInterestInput(e.target.value)}
+                  onKeyDown={handleInterestKeyDown}
+                  onBlur={addInterest}
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <div style={{ fontSize: '13px', color: '#888', marginBottom: '8px' }}>
+                  Photos ({photos.length}/{MAX_PHOTOS})
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                  {photos.map(photo => (
+                    <div key={photo.id} style={{ position: 'relative', paddingTop: '100%', borderRadius: '8px', overflow: 'hidden' }}>
+                      <img
+                        src={photo.url}
+                        alt=""
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <button
+                        onClick={() => handlePhotoDelete(photo.id)}
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          background: 'rgba(0,0,0,0.6)',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '12px',
+                          cursor: 'pointer'
+                        }}
+                        aria-label="Delete photo"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  {photos.length < MAX_PHOTOS && (
+                    <div
+                      onClick={() => !uploadingPhoto && photoInputRef.current?.click()}
+                      style={{
+                        position: 'relative',
+                        paddingTop: '100%',
+                        borderRadius: '8px',
+                        border: '1px dashed #3b82f6',
+                        cursor: uploadingPhoto ? 'default' : 'pointer'
+                      }}
+                    >
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#3b82f6',
+                        fontSize: '13px'
+                      }}>
+                        {uploadingPhoto ? '…' : '+ Add'}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoPick}
+                  style={{ display: 'none' }}
+                />
+              </div>
+
               <button
                 onClick={handleSave}
                 disabled={saving}
