@@ -131,11 +131,13 @@ router.post('/:userId', authenticate, asyncHandler(async (req, res) => {
     [senderId, recipientId, content]
   );
 
-  // Create/update conversation
+  // Create/update conversation. Explicit ::uuid casts matter here — without
+  // them Postgres can't infer a type for $1/$2 inside LEAST/GREATEST, falls
+  // back to text, and then fails inserting text into a uuid column.
   await pool.query(
     `INSERT INTO conversations (user1_id, user2_id, last_message_at)
-     VALUES (LEAST($1,$2), GREATEST($1,$2), NOW())
-     ON CONFLICT (user1_id, user2_id) 
+     VALUES (LEAST($1::uuid, $2::uuid), GREATEST($1::uuid, $2::uuid), NOW())
+     ON CONFLICT (user1_id, user2_id)
      DO UPDATE SET last_message_at = NOW()`,
     [senderId, recipientId]
   );
